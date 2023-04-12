@@ -74,13 +74,10 @@ router.post('/createRecipe', verifyToken, (req, res) => {
 // delete recipe
 router.delete('/recipe/:id', verifyToken, (req, res, next) => {
   async function recipe(callback) {
-    await Recipe.findById(req.params.id).exec(callback);
+    await Recipe.findById(req.params.id).then(callback);
   }
   recipe(
-    (err, results) => {
-      if  (err) {
-        return next(err);
-      }
+    (results) => {
       if (results == null) {
         res.status(204).json('No results found');
       }
@@ -89,10 +86,7 @@ router.delete('/recipe/:id', verifyToken, (req, res, next) => {
           console.log(err);
           res.status(403).json({message: 106})
         } else if (results.creator.id == authData.userInfo.id){
-          Recipe.findByIdAndRemove(req.params.id, (err) => {        
-            if (err) {          
-              return next(err);        
-            }        
+          Recipe.findByIdAndRemove(req.params.id).then(() => {          
             res.status(200).json("successfully deleted");      
           })
         } else {
@@ -106,12 +100,9 @@ router.delete('/recipe/:id', verifyToken, (req, res, next) => {
 // update recipe
 router.put('/recipe/:id', verifyToken, (req, res, next) => {
   async function recipe(callback) {
-    await Recipe.findById(req.params.id).exec(callback);
+    await Recipe.findById(req.params.id).then(callback);
   }
-  recipe((err, results) => {
-    if (err) {
-      return next(err);
-    }
+  recipe((results) => {
     if (results == null) {
       res.status(204).json('No results found');
     }
@@ -127,13 +118,8 @@ router.put('/recipe/:id', verifyToken, (req, res, next) => {
           description: req.body.description,
           notes: req.body.notes,
           editedDate: req.body.editedDate
-        }, (err, results) => {
-          if (err)  {
-            console.log(err);
-            res.status(400).json({message: 149})
-          } else {
-            res.status(200).json(req.params.id)
-          }
+        }).then(() => {
+          res.status(200).json(req.params.id)
         })
       } else {
         console.log(res.data.creator, req.body.creatorID);
@@ -146,17 +132,11 @@ router.put('/recipe/:id', verifyToken, (req, res, next) => {
 // view a recipe
 router.route('/recipe/:id').get((req, res) => {
   Recipe.findById(req.params.id)
-    .exec((err, recipe) => {
-      if (err) {
-        return err;
-      }
+    .then((recipe) => {
       if (recipe == null) {
-        const err = new Error("Recipe not found");
-        err.status = 404;
-        return err;
+        res.status(404).json({message:"Recipe not found"})
       }
-      //console.log(recipe)
-      res.json(recipe);
+      res.status(200).json(recipe);
     });
 });
 

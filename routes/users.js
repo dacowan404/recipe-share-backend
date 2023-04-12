@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const router = express.Router();
-const User = require("../../models/user");
+const User = require("../models/user");
 const passport = require('passport');
 const LocalStrategy = require("passport-local").Strategy;
 
@@ -10,10 +10,7 @@ const secretKey = process.env.SECRET_KEY;
 
 passport.use(
   new LocalStrategy((username, password, done) => {
-    User.findOne({ username: username }, (err, user) => {
-      if (err) {
-        return done(err);
-      }
+    User.findOne({ username: username }).then((user) => {
       if (!user) {
         return done(null, false, {message: "Incorrect Username" });
       }
@@ -69,10 +66,7 @@ router.route('/new-user').post((req, res) => {
       passport.authenticate('local', {session: false}, (err, user, info) => {
         if (err || !user) {
           console.log('54');
-          return res.status(401).json({
-            message: 'Something is not right',
-            user : user.username
-          });
+          return res.status(401).json(info);
         }
       req.login(user, {session: false}, (err) => {
         if (err) {
@@ -110,7 +104,7 @@ router.get("/auth/checkLogin", verifyToken, (req, res) => {
 
 router.get("/auth/login/failed", (req,res) => {
   res.status(401).json({
-      success:false,
+      success: false,
       message: "no one logged in",
   });
  });
@@ -124,20 +118,13 @@ router.get("/auth/logout", (req, res, next) => {
 
 //login route
 router.post('/auth/login', function (req, res, next) {
-  passport.authenticate('local', {session: false}, (err, user, info) => {
-    if (err ) {
-      console.log(err);
-      return res.status(400).json({login:false})
-    } else if (!user) {
+  passport.authenticate('local', {session: false}, (err, user) => {
+   if (!user) {
       return res.status(401).json({
         login: false,
       });
     }
-  req.login(user, {session: false}, (err) => {
-    if (err) {
-      console.log('197');
-      res.status(402).json({login: false, err});
-    }
+  req.login(user, {session: false}, () => {
     const userInfo = { 
       username: user.username,
       email: user.email,
@@ -161,23 +148,12 @@ router.post('/auth/login', function (req, res, next) {
           return res.status(403).json({mess:'147'})
         }
         passport.authenticate('local', {session: false}, (err, user, info) => {
-          if (err) {
-            console.log(err, '149');
-            return res.status(402).json({message: 149})
-          } else if (!user) {
-            return res.status(401).json({
-              login: false,
-              message: 'Something is not right',
-              user : user.username
-            });
+          if (!user) {
+            return res.status(401).json(info);
           } else {
-            encryptPassword(req.body.newPassword, (encryptedPW) => {
-              User.findByIdAndUpdate(authData.userInfo.id, { password: encryptedPW}, (err) => {  
-                if (err) {
-                  res.status(403).json({mess: 173});
-                } else {
-                  res.status(200).json({mess: "password updated"})
-                }
+            encryptPassword(req.body.newPassword, user.salt, (encryptedPW) => {
+              User.findByIdAndUpdate(authData.userInfo.id,  { password: encryptedPW }).then(() => {  
+                res.status(200).json({mess: "password updated"})
               })
           })}
         })(req, res);
