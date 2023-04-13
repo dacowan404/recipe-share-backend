@@ -39,17 +39,7 @@ app.use(passport.initialize());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(logger('dev'));
-app.use(cors({
-  origin: "http://localhost:3000",
-  methods: "GET,POST,PUT,DELETE",
-  credentials: true,
-  },
-  {
-    origin: "http://localhost:3000/login",
-    methods: "GET,POST,PUT,DELETE",
-    credentials: true,
-  })
-);
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
