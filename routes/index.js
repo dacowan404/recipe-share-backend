@@ -140,4 +140,8 @@ router.route('/recipe/:id').get((req, res) => {
     });
 });
 
+router.route('/start').get((req, res) => {
+  res.status(200);
+});
+
 module.exports = router;
